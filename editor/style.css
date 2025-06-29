@@ -1,6 +1,8 @@
 body {
     font-family: 'Inter', sans-serif;
 }
+
+/* --- Stili Quiz (Esistenti) --- */
 .option-button {
     transition: background-color 0.3s ease, transform 0.1s ease;
 }
@@ -34,6 +36,7 @@ body {
     border-radius: 0.375rem;
     cursor: pointer;
     text-align: center;
+    transition: background-color 0.2s;
 }
 .file-input-container input[type="file"] {
     position: absolute;
@@ -48,9 +51,8 @@ body {
     background-color: #2563eb;
 }
 #quiz-container, #upload-container, #results-container {
-    min-height: 180px;
+        min-height: 300px;
 }
-/* Stili per i pulsanti di selezione numero domande */
 .count-button {
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
@@ -59,4 +61,27 @@ body {
     color: white;
     border-color: #0284c7;
     font-weight: 600;
+}
+
+/* --- Stili Editor (Aggiornati) --- */
+.question-item {
+    transition: background-color 0.2s ease-in-out;
+}
+.question-item:hover {
+    background-color: #f8fafc; /* slate-50 */
+}
+.answer-option-container {
+    background-color: #f8fafc; /* slate-50 */
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0; /* slate-200 */
+}
+.details-content {
+    transition: max-height 0.3s ease-in-out;
+}
+.details-correct-option {
+    background-color: #f0fdf4; /* green-50 */
+    border-color: #4ade80; /* green-400 */
+    color: #15803d; /* green-700 */
+    border-width: 1.5px;
 }
