@@ -97,7 +97,7 @@ function updateQuestionCountOptions() {
         const button = document.createElement('button');
         button.dataset.value = value;
         button.textContent = text;
-        button.className = 'count-button px-4 py-2 border border-slate-300 rounded-md text-sm font-medium bg-white hover:bg-slate-50';
+        button.className = 'count-button px-4 py-2 border border-slate-300 rounded-md text-sm font-medium bg-white';
         questionCountButtons.appendChild(button);
     };
 

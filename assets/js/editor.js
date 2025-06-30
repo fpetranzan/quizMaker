@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             questionElement.dataset.id = question.id;
 
             const header = document.createElement('div');
-            header.className = 'flex justify-between items-start cursor-pointer';
+            header.className = 'flex justify-between items-start cursor-pointer max-sm:flex-col';
             
             const questionText = document.createElement('p');
             questionText.className = 'font-semibold text-slate-800 flex-grow';
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             header.appendChild(questionText);
             
             const buttons = document.createElement('div');
-            buttons.className = 'flex gap-2 ml-4 flex-shrink-0';
+            buttons.className = 'flex gap-2 ml-4 flex-shrink-0 max-sm:ml-0 max-sm:mt-2';
             const editButton = document.createElement('button');
             editButton.textContent = 'Modifica';
             editButton.className = 'edit-btn bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-1 px-3 rounded';

@@ -47,12 +47,14 @@ body {
 .file-input-container:hover {
     background-color: #2563eb;
 }
-#quiz-container, #upload-container, #results-container {
-    min-height: 180px;
-}
 /* Stili per i pulsanti di selezione numero domande */
 .count-button {
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+.count-button:hover {
+    color: #3b82f6;
+    font-weight: bold;
+    background-color: oklch(98.4% 0.003 247.858);
 }
 .count-button.selected {
     background-color: #0ea5e9;
@@ -60,3 +62,4 @@ body {
     border-color: #0284c7;
     font-weight: 600;
 }
+
