@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DOM ELEMENTS ---
     const fileInput = document.getElementById('json-file-input-editor');
+    const uploadContainer = document.getElementById('upload-container');
     const fileNamesDisplay = document.getElementById('file-names-editor');
     const downloadButton = document.getElementById('download-json-button');
     const errorDisplay = document.getElementById('editor-error');
@@ -31,6 +32,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterSelect = document.getElementById('filter-select');
 
     // --- FUNCTIONS ---
+
+    fileInput.addEventListener('change', (event) => {
+        handleFiles(event.target.files);
+    });
+
+    uploadContainer.addEventListener('dragover', (event) => {
+        event.preventDefault(); // Necessario per permettere il drop
+        uploadContainer.classList.add('drag-over');
+    });
+
+    // L'utente lascia l'area di trascinamento
+    uploadContainer.addEventListener('dragleave', () => {
+        uploadContainer.classList.remove('drag-over');
+    });
+
+    // L'utente rilascia il file
+    uploadContainer.addEventListener('drop', (event) => {
+        event.preventDefault();
+        uploadContainer.classList.remove('drag-over');
+        handleFiles(event.dataTransfer.files);
+    });
 
     /**
      * Filters and renders the list of questions based on current search and filter values.
@@ -65,11 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         filteredQuestions.forEach(question => {
             const questionElement = document.createElement('div');
-            questionElement.className = 'question-item p-4 border border-slate-200 rounded-lg';
+            questionElement.className = 'question-item p-4 border border-slate-200 rounded-lg cursor-pointer';
             questionElement.dataset.id = question.id;
 
             const header = document.createElement('div');
-            header.className = 'flex justify-between items-start cursor-pointer max-sm:flex-col';
+            header.className = 'flex justify-between items-start max-sm:flex-col';
             
             const questionText = document.createElement('p');
             questionText.className = 'font-semibold text-slate-800 flex-grow';
@@ -108,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
             questionElement.appendChild(header);
             questionElement.appendChild(detailsContent);
             
-            header.onclick = () => {
+            questionElement.onclick = () => {
                 detailsContent.classList.toggle('hidden');
             };
 
@@ -191,8 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    fileInput.addEventListener('change', async (event) => {
-        const files = event.target.files;
+    async function handleFiles(files) {
         if (!files.length) return;
         fileNamesDisplay.textContent = `${files.length} file selezionati.`;
         errorDisplay.textContent = 'Caricamento...';
@@ -228,13 +249,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             errorDisplay.textContent = `Caricate ${loadedQuestions.length} domande. ${newQuestions.length} nuove aggiunte.`;
+            errorDisplay.classList.add('text-green-500');
             renderQuestionsList();
         } catch (error) {
             errorDisplay.textContent = error.message;
+            errorDisplay.classList.add('text-red-500');
         } finally {
             fileInput.value = '';
         }
-    });
+    };
 
     form.addEventListener('submit', (event) => {
         event.preventDefault();

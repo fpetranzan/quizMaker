@@ -25,11 +25,13 @@
         <!-- Actions Container -->
         <div class="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
             <div class="flex flex-col sm:flex-row gap-4 items-center">
-                <label for="json-file-input-editor" class="file-input-container">
-                    <span>Carica JSON</span>
-                    <input type="file" id="json-file-input-editor" accept=".json" class="text-sm" multiple>
-                </label>
-                <p id="file-names-editor" class="text-slate-500 text-sm">Nessun file caricato.</p>
+                <div id="upload-container" class="flex text-center border-2 border-dashed border-slate-300 p-6 rounded-lg">
+                    <label for="json-file-input-editor" class="file-input-container">
+                        <span>Carica JSON</span>
+                        <input type="file" id="json-file-input-editor" accept=".json" class="text-sm" multiple>
+                    </label>
+                    <p id="file-names-editor" class="content-center ml-5 text-slate-500 text-sm">Nessun file caricato.</p>
+                </div>
             </div>
             <div class="flex flex-col sm:flex-row gap-2 items-stretch">
                 <input type="text" id="quiz-filename-input" placeholder="Nome del file (es: quiz-storia)" class="w-full sm:flex-grow p-2 border border-slate-300 rounded-md text-sm focus:ring-sky-500 focus:border-sky-500">
