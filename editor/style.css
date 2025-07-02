@@ -50,9 +50,6 @@ body {
 .file-input-container:hover {
     background-color: #2563eb;
 }
-#quiz-container, #upload-container, #results-container {
-    /*min-height: 300px;*/
-}
 .count-button {
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
