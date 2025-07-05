@@ -20,6 +20,7 @@ const progressBar = document.getElementById('progress-bar');
 const questionCounterElement = document.getElementById('question-counter');
 const questionCountSelector = document.getElementById('question-count-selector');
 const questionCountButtons = document.getElementById('question-count-buttons');
+const uploadedFilesList = document.getElementById('uploaded-files-list');
 
 // Pulsanti di navigazione del quiz
 const backButton = document.getElementById('back-button');
@@ -36,6 +37,11 @@ let loadedQuizData = [];
 let currentQuestionIndex = 0;
 let score = 0;
 let selectedOption = null; // Memorizza l'elemento del DOM del pulsante dell'opzione selezionata
+let uploadedFiles = []; // Array per tenere traccia dei nomi dei file caricati
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadQuestionsFromLocalStorage();
+});
 
 jsonFileInput.addEventListener('change', (event) => {
     handleFiles(event.target.files);
@@ -61,18 +67,27 @@ uploadContainer.addEventListener('drop', (event) => {
 // --- Gestione Caricamento File ---
 async function handleFiles(files) {
     if (!files || !files.length) {
-        resetUploadUI();
+        // Se non ci sono file, non resettare completamente se ci sono già file caricati
+        if (uploadedFiles.length === 0) {
+            resetUploadUI();
+        }
         return;
     }
 
-    const fileNames = Array.from(files).map(f => f.name).join(', ');
-    fileNameDisplay.textContent = `${files.length} file selezionato/i: ${fileNames}`;
-    startQuizButton.disabled = true;
-    questionCountSelector.classList.add('hidden');
     uploadError.textContent = 'Caricamento e validazione in corso...';
     uploadError.classList.remove('text-red-500', 'text-green-500');
 
-    const fileReadPromises = Array.from(files).map(file => {
+    const newFilesToProcess = Array.from(files).filter(file => 
+        !uploadedFiles.some(uploadedFile => uploadedFile.name === file.name && uploadedFile.size === file.size)
+    );
+
+    if (newFilesToProcess.length === 0) {
+        uploadError.textContent = 'I file selezionati sono già stati caricati.';
+        uploadError.classList.add('text-red-500');
+        return;
+    }
+
+    const fileReadPromises = newFilesToProcess.map(file => {
         return new Promise((resolve, reject) => {
             if (file.type !== "application/json") {
                 return reject(new Error(`Il file '${file.name}' non è un JSON.`));
@@ -84,7 +99,7 @@ async function handleFiles(files) {
                     const questionsFromFile = parsedData.questions || (Array.isArray(parsedData) ? parsedData : null);
                     if (!questionsFromFile) throw new Error("Formato JSON non riconosciuto.");
                     if (questionsFromFile.length > 0) validateQuestions(questionsFromFile);
-                    resolve(questionsFromFile);
+                    resolve({ name: file.name, data: questionsFromFile, rawContent: e.target.result });
                 } catch (error) {
                     reject(new Error(`Errore nel file '${file.name}': ${error.message}`));
                 }
@@ -96,11 +111,19 @@ async function handleFiles(files) {
     
     try {
         const results = await Promise.all(fileReadPromises);
-        loadedQuizData = results.flat(); 
+        
+        results.forEach(fileResult => {
+            uploadedFiles.push({ name: fileResult.name, content: fileResult.rawContent });
+            loadedQuizData.push(...fileResult.data);
+        });
+
+        saveQuestionsToLocalStorage(); // Salva i file nel localStorage
+
         if (loadedQuizData.length === 0) throw new Error("Nessuna domanda valida trovata nei file selezionati.");
         
-        uploadError.textContent = `Caricate con successo ${loadedQuizData.length} domande.`;
+        uploadError.textContent = `Caricate con successo ${loadedQuizData.length} domande da ${uploadedFiles.length} file.`;
         uploadError.classList.add('text-green-500');
+        updateUploadedFilesList(); // Aggiorna la lista visibile dei file
         updateQuestionCountOptions();
         questionCountSelector.classList.remove('hidden');
         startQuizButton.disabled = false;
@@ -108,7 +131,132 @@ async function handleFiles(files) {
         console.error("Errore durante il caricamento:", error);
         uploadError.textContent = error.message;
         uploadError.classList.add('text-red-500');
+        // Non resettare completamente l'UI se ci sono già file validi
+        if (loadedQuizData.length === 0) {
+            resetUploadUI();
+        }
+    } finally {
+        jsonFileInput.value = ''; // Resetta l'input file per permettere di caricare lo stesso file di nuovo
+    }
+}
+
+function saveQuestionsToLocalStorage() {
+    try {
+        localStorage.setItem('uploadedQuizFiles', JSON.stringify(uploadedFiles));
+    } catch (e) {
+        console.error("Errore nel salvataggio su localStorage:", e);
+        uploadError.textContent = "Errore: impossibile salvare i file nel browser (memoria piena?).";
+        uploadError.classList.add('text-red-500');
+    }
+}
+
+async function loadQuestionsFromLocalStorage() {
+    try {
+        const storedFiles = localStorage.getItem('uploadedQuizFiles');
+        if (storedFiles) {
+            uploadedFiles = JSON.parse(storedFiles);
+            loadedQuizData = []; // Resetta i dati caricati
+            let allQuestionsValid = true;
+
+            for (const file of uploadedFiles) {
+                try {
+                    const parsedData = JSON.parse(file.content);
+                    const questionsFromFile = parsedData.questions || (Array.isArray(parsedData) ? parsedData : null);
+                    if (!questionsFromFile) throw new Error("Formato JSON non riconosciuto.");
+                    validateQuestions(questionsFromFile); // Valida ogni set di domande
+                    loadedQuizData.push(...questionsFromFile);
+                } catch (error) {
+                    console.warn(`File '${file.name}' dal localStorage non valido, verrà rimosso: ${error.message}`);
+                    allQuestionsValid = false;
+                    // Rimuovi il file non valido dall'array uploadedFiles
+                    uploadedFiles = uploadedFiles.filter(f => f.name !== file.name);
+                }
+            }
+
+            if (!allQuestionsValid) {
+                saveQuestionsToLocalStorage(); // Aggiorna il localStorage rimuovendo i file non validi
+            }
+
+            if (loadedQuizData.length > 0) {
+                uploadError.textContent = `Caricate ${loadedQuizData.length} domande dal salvataggio precedente.`;
+                uploadError.classList.add('text-green-500');
+                updateUploadedFilesList();
+                updateQuestionCountOptions();
+                questionCountSelector.classList.remove('hidden');
+                startQuizButton.disabled = false;
+            } else {
+                resetUploadUI();
+            }
+        } else {
+            resetUploadUI();
+        }
+    } catch (e) {
+        console.error("Errore nel caricamento da localStorage:", e);
+        localStorage.removeItem('uploadedQuizFiles'); // Pulisci il localStorage se corrotto
         resetUploadUI();
+    }
+}
+
+// --- Gestione Lista File Caricati ---
+function updateUploadedFilesList() {
+    uploadedFilesList.innerHTML = ''; // Pulisce la lista esistente
+    if (uploadedFiles.length === 0) {
+        fileNameDisplay.classList.remove('hidden');
+        fileNameDisplay.textContent = "Nessun file selezionato.";
+        return;
+    }
+    fileNameDisplay.classList.add('hidden'); // Nasconde il messaggio "Nessun file selezionato"
+
+    uploadedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'uploaded-file-item';
+        fileItem.innerHTML = `
+            <span>${file.name}</span>
+            <button class="remove-file-button" data-index="${index}">&times;</button>
+        `;
+        uploadedFilesList.appendChild(fileItem);
+    });
+
+    // Aggiungi listener per i pulsanti di rimozione
+    uploadedFilesList.querySelectorAll('.remove-file-button').forEach(button => {
+        button.addEventListener('click', removeFile);
+    });
+}
+
+function removeFile(event) {
+    const indexToRemove = parseInt(event.target.dataset.index, 10);
+    
+    // Rimuovi il file dall'array uploadedFiles
+    const removedFile = uploadedFiles.splice(indexToRemove, 1)[0];
+
+    // Ricostruisci loadedQuizData dai file rimanenti
+    loadedQuizData = [];
+    uploadedFiles.forEach(file => {
+        try {
+            const parsedData = JSON.parse(file.content);
+            const questionsFromFile = parsedData.questions || (Array.isArray(parsedData) ? parsedData : null);
+            if (questionsFromFile) {
+                loadedQuizData.push(...questionsFromFile);
+            }
+        } catch (e) {
+            console.error(`Errore nel ri-parsing del file ${file.name} dopo la rimozione:`, e);
+            // Questo caso dovrebbe essere raro se la validazione iniziale ha funzionato
+        }
+    });
+
+    saveQuestionsToLocalStorage(); // Salva lo stato aggiornato
+    updateUploadedFilesList(); // Aggiorna la UI
+
+    if (loadedQuizData.length === 0) {
+        resetUploadUI();
+        uploadError.textContent = "Tutti i file sono stati rimossi. Carica nuovi file JSON.";
+        uploadError.classList.add('text-red-500');
+    } else {
+        uploadError.textContent = `File '${removedFile.name}' rimosso. ${loadedQuizData.length} domande rimanenti.`;
+        uploadError.classList.add('text-green-500');
+        updateQuestionCountOptions();
+        questionCountSelector.classList.remove('hidden');
+        startQuizButton.disabled = false;
     }
 }
 
@@ -330,12 +478,17 @@ restartQuizButton.addEventListener('click', () => {
         configContainer.classList.remove('hidden');
         questionCountSelector.classList.remove('hidden');
         heroBanner.classList.remove('hidden');
+        editorQuizButton.classList.remove('hidden');
         startQuizButton.disabled = false;
 });
 
 function resetUploadUI() {
     jsonFileInput.value = '';
     fileNameDisplay.textContent = "Nessun file selezionato.";
+    fileNameDisplay.classList.remove('hidden'); // Assicurati che sia visibile
+    editorQuizButton.classList.remove('hidden');
+    uploadedFilesList.innerHTML = ''; // Pulisci la lista dei file caricati
+    uploadedFiles = []; // Resetta l'array dei file caricati
     startQuizButton.disabled = true;
     questionCountSelector.classList.add('hidden');
     uploadError.textContent = '';
@@ -345,9 +498,10 @@ loadNewFileButton.addEventListener('click', () => {
     resultsContainer.classList.add('hidden');
     configContainer.classList.remove('hidden');
     heroBanner.classList.remove('hidden');
-    resetUploadUI();
     questions = [];
     loadedQuizData = [];
     currentQuestionIndex = 0;
     score = 0;
+    localStorage.removeItem('uploadedQuizFiles'); // Pulisci il localStorage quando si caricano nuovi file
+    resetUploadUI();
 });
