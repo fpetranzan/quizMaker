@@ -4,48 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom Quiz Maker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css" />
 </head>
-<body class="bg-slate-100 text-slate-800 flex flex-col items-center justify-center min-h-screen p-4">
+<body class="main-container">
 
-    <div class="bg-white p-4 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl relative">
+    <div class="quiz-card">
 
-        <a href="./index.html" title="Crea o Modifica Quiz" id="home-quiz-button" class="absolute top-4 left-4 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out max-sm:py-1 max-sm:px-2 max-sm:text-sm hidden">
+        <a href="./index.html" title="Crea o Modifica Quiz" id="home-quiz-button" class="btn btn-purple nav-button left hidden">
             Home
         </a>
 
-        <a href="./editor/index.html" title="Crea o Modifica Quiz" id="editor-quiz-button" class="absolute top-4 right-4 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out max-sm:py-1 max-sm:px-2 max-sm:text-sm">
+        <a href="./editor/index.html" title="Crea o Modifica Quiz" id="editor-quiz-button" class="btn btn-success nav-button right">
             Editor
         </a>
 
-        <header id="hero-banner" class="mb-6 text-center">
-            <h1 class="text-2xl sm:text-4xl font-bold text-sky-600">Quiz Interattivo</h1>
-            <p class="text-slate-500 mt-1">Carica uno o più file JSON per iniziare il quiz.</p>
+        <header id="hero-banner">
+            <div class="title-container">
+                <span>🎯</span>
+                <h1 class="text-sky-600">Quiz Interattivo</h1>
+            </div>
+            <p class="text-lg">Carica uno o più file JSON per iniziare il quiz.</p>
         </header>
 
         <!-- Sezione Caricamento File (con Drag & Drop) -->
         <div id="config-container">
-            <div id="upload-container" class="text-center border-2 border-dashed border-slate-300 p-6 rounded-lg">
-                <label for="json-file-input" class="file-input-container mb-4 cursor-pointer">
-                    <span>Scegli file JSON o trascinali qui</span>
-                    <input type="file" id="json-file-input" accept=".json" class="hidden" multiple>
-                </label>
+            <div id="upload-container">
+                <div class="upload-content">
+                    <label for="json-file-input" class="file-input-container">
+                        <span>📤 Scegli file JSON o trascinali qui</span>
+                        <input type="file" id="json-file-input" accept=".json" class="hidden" multiple>
+                    </label>
+                </div>
             </div>
-            <div class="text-center p-6 rounded-lg">
-                <div id="uploaded-files-list" class="mb-4 text-left"></div>
-                <p id="file-name" class="text-slate-500 text-sm mb-4 hidden">Nessun file selezionato.</p>
-                <p id="upload-error" class="mt-2 text-sm"></p>
+            <div class="config-section">
+                <div id="uploaded-files-list"></div>
+                <p id="file-name" class="text-sm hidden">Nessun file selezionato.</p>
+                <p id="upload-error" class="text-sm"></p>
 
                 <!-- Selettore numero domande con pulsanti -->
-                <div id="question-count-selector" class="mt-4 hidden">
-                    <label class="block text-slate-600 mb-2 font-medium">Scegli il numero di domande:</label>
-                    <div id="question-count-buttons" class="flex flex-wrap justify-center gap-2">
+                <div id="question-count-selector" class="hidden">
+                    <label>Scegli il numero di domande:</label>
+                    <div id="question-count-buttons">
                         <!-- Pulsanti aggiunti dinamicamente -->
                     </div>
                 </div>
 
-                <button id="start-quiz-button" class="mt-6 bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <button id="start-quiz-button" class="btn btn-primary" disabled>
                     Inizia Quiz
                 </button>
             </div>
@@ -53,44 +57,47 @@
 
         <!-- Sezione Quiz -->
         <div id="quiz-container" class="hidden">
-            <div id="progress-bar-container" class="w-full bg-slate-200 rounded-full h-2.5 mb-4 mt-10">
-                <div id="progress-bar" class="bg-sky-500 h-2.5 rounded-full" style="width: 0%"></div>
+            <div id="progress-bar-container" class="progress-bar">
+                <div id="progress-bar" class="progress-fill" style="width: 0%"></div>
             </div>
-            <div id="question-counter" class="text-sm text-slate-500 mb-2 text-right">Domanda 0 di 0</div>
+            <div id="question-counter" class="text-sm">Domanda 0 di 0</div>
 
-            <h2 id="question-text" class="text-xl sm:text-2xl font-semibold mb-6 text-slate-700"></h2>
-            <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6"></div>
-            <div id="feedback-container" class="p-4 rounded-lg mb-6 hidden min-h-[100px]">
+            <h2 id="question-text"></h2>
+            <div id="options-container"></div>
+            <div id="feedback-container" class="feedback-container hidden">
                 <p id="feedback-text" class="text-lg font-medium mb-2"></p>
                 <p id="explanation-text" class="text-sm"></p>
             </div>
 
              <!-- Pulsanti di navigazione del quiz -->
-            <div class="mt-6 flex justify-between items-center">
-                 <button id="back-button" class="bg-slate-500 hover:bg-slate-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out hidden">
+            <div class="quiz-navigation">
+                 <button id="back-button" class="btn btn-secondary hidden">
                     Indietro
                 </button>
-                <button id="confirm-button" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed ml-auto" disabled>
+                <button id="confirm-button" class="btn btn-primary confirm-button" disabled>
                     Conferma
                 </button>
-                 <button id="next-question-button" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out hidden">
+                 <button id="next-question-button" class="btn btn-primary full-width hidden">
                     Domanda Successiva
                 </button>
             </div>
         </div>
 
         <!-- Sezione Risultati -->
-        <div id="results-container" class="hidden text-center">
-            <h2 class="text-2xl sm:text-3xl font-bold text-sky-600 mb-4">Quiz Completato!</h2>
-            <p class="text-xl text-slate-700 mb-2">Il tuo punteggio:</p>
-            <p id="score-text" class="text-4xl font-bold text-green-500 mb-6">0/0</p>
+        <div id="results-container" class="hidden">
+            <div class="results-content">
+                <div class="celebration">🎉</div>
+                <h2 class="text-sky-600">Quiz Completato!</h2>
+                <p class="score-label">Il tuo punteggio:</p>
+                <p id="score-text">0/0</p>
+            </div>
             
             <!-- Contenitore pulsanti responsivo -->
-            <div class="mt-8 flex flex-col sm:flex-row sm:justify-center sm:gap-4">
-                <button id="restart-quiz-button" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">
+            <div class="results-buttons">
+                <button id="restart-quiz-button" class="btn btn-warning">
                     Fai un altro quiz
                 </button>
-                <button id="load-new-file-button" class="w-full sm:w-auto mt-3 sm:mt-0 bg-slate-500 hover:bg-slate-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">
+                <button id="load-new-file-button" class="btn btn-secondary secondary">
                     Carica nuovi file
                 </button>
             </div>

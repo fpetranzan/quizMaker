@@ -4,121 +4,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor Quiz</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../style.css" />
     <link rel="stylesheet" href="style.css" />
 </head>
-<body class="bg-slate-100 text-slate-800 flex flex-col items-center min-h-screen p-4">
+<body class="main-container">
 
-    <div class="bg-white p-4 sm:p-8 rounded-xl shadow-2xl w-full max-w-4xl">
+    <div class="editor-card">
 
         <!-- Header -->
-        <header class="mb-6 pb-4 border-b border-slate-200 flex justify-between items-center">
+        <header class="editor-header">
             <div>
-                <h1 class="text-2xl sm:text-4xl font-bold text-sky-600">Editor Quiz</h1>
-                <p class="text-slate-500 mt-1">Crea nuove domande o carica un file JSON per modificarle.</p>
+                <h1 class="text-sky-600">✏️ Editor Quiz</h1>
+                <p class="text-lg">Crea nuove domande o carica un file JSON per modificarle.</p>
             </div>
-            <a href="../index.html" class="bg-slate-500 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out whitespace-nowrap max-sm:py-2 max-sm:px-3 max-sm:text-xs max-sm:justify-start">
-                Torna alla Home
+            <a href="../index.html" class="btn btn-secondary home-button">
+                Home
             </a>
         </header>
 
         <!-- Actions Container -->
-        <div class="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <div class="flex flex-col sm:flex-row gap-4 items-center">
-                <div id="upload-container" class="flex text-center border-2 border-dashed border-slate-300 p-6 rounded-lg">
+        <div class="actions-container">
+            <div class="upload-section">
+                <div class="upload-area">
                     <label for="json-file-input-editor" class="file-input-container">
                         <span>Carica JSON</span>
                         <input type="file" id="json-file-input-editor" accept=".json" class="text-sm" multiple>
                     </label>
-                    <p id="file-names-editor" class="content-center ml-5 text-slate-500 text-sm">Carica le tue domande.</p>
+                    <p id="file-names-editor" class="upload-text text-sm">Carica le tue domande.</p>
                 </div>
             </div>
-            <div class="flex flex-col sm:flex-row gap-2 items-stretch">
-                <input type="text" id="quiz-filename-input" placeholder="Nome del file (es: quiz-storia)" class="w-full sm:flex-grow p-2 border border-slate-300 rounded-md text-sm focus:ring-sky-500 focus:border-sky-500">
-                <button id="download-json-button" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
+            <div class="download-section">
+                <input type="text" id="quiz-filename-input" placeholder="Nome del file (es: quiz-storia)" class="filename-input text-sm">
+                <button id="download-json-button" class="btn btn-success">
                     Scarica JSON
                 </button>
             </div>
         </div>
         
-        <div id="uploaded-files-list" class="mb-4 text-left"></div>
-        <p id="editor-error" class="text-red-500 text-sm mb-4"></p>
+        <div id="uploaded-files-list"></div>
+        <p id="editor-error" class="error-text text-sm"></p>
 
         <!-- Toggle Form Button -->
-        <div class="mb-6">
-            <button id="toggle-form-button" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-150">
+        <div class="form-section">
+            <button id="toggle-form-button" class="btn btn-primary">
                 + Aggiungi Domanda
             </button>
         </div>
 
         <!-- Editor Form (Initially Hidden) -->
-        <div id="editor-form-container" class="mb-8 hidden">
-            <h2 id="form-title" class="text-xl font-semibold text-slate-700 mb-4">Aggiungi una Nuova Domanda</h2>
-            <form id="question-form" class="space-y-4">
+        <div id="editor-form-container" class="form-container hidden">
+            <h2 id="form-title">Aggiungi una Nuova Domanda</h2>
+            <form id="question-form">
                 <input type="hidden" id="editing-question-id">
                 
-                <div>
-                    <label for="question-text-input" class="block text-sm font-medium text-slate-600 mb-1">Testo della Domanda</label>
-                    <textarea id="question-text-input" placeholder="Es: Qual è la capitale d'Italia?" class="w-full p-2 border border-slate-300 rounded-md" rows="3" required></textarea>
+                <div class="form-group">
+                    <label for="question-text-input">Testo della Domanda</label>
+                    <textarea id="question-text-input" placeholder="Es: Qual è la capitale d'Italia?" rows="3" required></textarea>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-grid">
                     <!-- Options A-D -->
                     <div class="answer-option-container">
-                        <label for="option-a-input" class="block text-sm font-medium text-slate-600 mb-1">Risposta A</label>
-                        <textarea id="option-a-input" placeholder="Testo della risposta A" class="w-full p-2 border border-slate-300 rounded-md" rows="2" required></textarea>
-                        <div class="mt-2"><input type="radio" id="radio-a" name="correct-answer" value="A" class="h-4 w-4 text-sky-600 focus:ring-sky-500 border-slate-300" required><label for="radio-a" class="ml-2 text-sm text-slate-600">Risposta corretta</label></div>
+                        <label for="option-a-input">Risposta A</label>
+                        <textarea id="option-a-input" placeholder="Testo della risposta A" rows="2" required></textarea>
+                        <div class="radio-group"><input type="radio" id="radio-a" name="correct-answer" value="A" class="radio-input" required><label for="radio-a" class="radio-label">Risposta corretta</label></div>
                     </div>
                     <div class="answer-option-container">
-                        <label for="option-b-input" class="block text-sm font-medium text-slate-600 mb-1">Risposta B</label>
-                        <textarea id="option-b-input" placeholder="Testo della risposta B" class="w-full p-2 border border-slate-300 rounded-md" rows="2" required></textarea>
-                        <div class="mt-2"><input type="radio" id="radio-b" name="correct-answer" value="B" class="h-4 w-4 text-sky-600 focus:ring-sky-500 border-slate-300"><label for="radio-b" class="ml-2 text-sm text-slate-600">Risposta corretta</label></div>
+                        <label for="option-b-input">Risposta B</label>
+                        <textarea id="option-b-input" placeholder="Testo della risposta B" rows="2" required></textarea>
+                        <div class="radio-group"><input type="radio" id="radio-b" name="correct-answer" value="B" class="radio-input"><label for="radio-b" class="radio-label">Risposta corretta</label></div>
                     </div>
                     <div class="answer-option-container">
-                        <label for="option-c-input" class="block text-sm font-medium text-slate-600 mb-1">Risposta C</label>
-                        <textarea id="option-c-input" placeholder="Testo della risposta C" class="w-full p-2 border border-slate-300 rounded-md" rows="2" required></textarea>
-                        <div class="mt-2"><input type="radio" id="radio-c" name="correct-answer" value="C" class="h-4 w-4 text-sky-600 focus:ring-sky-500 border-slate-300"><label for="radio-c" class="ml-2 text-sm text-slate-600">Risposta corretta</label></div>
+                        <label for="option-c-input">Risposta C</label>
+                        <textarea id="option-c-input" placeholder="Testo della risposta C" rows="2" required></textarea>
+                        <div class="radio-group"><input type="radio" id="radio-c" name="correct-answer" value="C" class="radio-input"><label for="radio-c" class="radio-label">Risposta corretta</label></div>
                     </div>
                     <div class="answer-option-container">
-                        <label for="option-d-input" class="block text-sm font-medium text-slate-600 mb-1">Risposta D</label>
-                        <textarea id="option-d-input" placeholder="Testo della risposta D" class="w-full p-2 border border-slate-300 rounded-md" rows="2" required></textarea>
-                        <div class="mt-2"><input type="radio" id="radio-d" name="correct-answer" value="D" class="h-4 w-4 text-sky-600 focus:ring-sky-500 border-slate-300"><label for="radio-d" class="ml-2 text-sm text-slate-600">Risposta corretta</label></div>
+                        <label for="option-d-input">Risposta D</label>
+                        <textarea id="option-d-input" placeholder="Testo della risposta D" rows="2" required></textarea>
+                        <div class="radio-group"><input type="radio" id="radio-d" name="correct-answer" value="D" class="radio-input"><label for="radio-d" class="radio-label">Risposta corretta</label></div>
                     </div>
                 </div>
 
-                <div>
-                    <label for="explanation-input" class="block text-sm font-medium text-slate-600 mb-1">Spiegazione</label>
-                    <textarea id="explanation-input" placeholder="Spiegazione della risposta corretta" class="w-full p-2 border border-slate-300 rounded-md" rows="3" required></textarea>
+                <div class="form-group">
+                    <label for="explanation-input">Spiegazione</label>
+                    <textarea id="explanation-input" placeholder="Spiegazione della risposta corretta" rows="3" required></textarea>
                 </div>
                 
-                <div class="flex gap-4">
-                    <button type="submit" id="save-question-button" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-150">Salva Domanda</button>
-                    <button type="button" id="cancel-edit-button" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-6 rounded-lg transition duration-150">Annulla Modifica</button>
+                <div class="form-actions">
+                    <button type="submit" id="save-question-button" class="btn btn-primary">Salva Domanda</button>
+                    <button type="button" id="cancel-edit-button" class="btn btn-light hidden">Annulla Modifica</button>
                 </div>
             </form>
         </div>
 
         <!-- Questions List Section -->
-        <div id="questions-list-section">
-            <div class="border-t border-slate-200 pt-6">
-                <h2 class="text-xl font-semibold text-slate-700 mb-4">Elenco Domande</h2>
-                
-                <!-- Filter Controls -->
-                <div id="filter-container" class="flex flex-col sm:flex-row gap-3 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <input type="search" id="search-input" placeholder="Cerca per parola chiave..." class="w-full sm:flex-grow p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
-                    <select id="filter-select" class="w-full sm:w-auto p-2 border border-slate-300 rounded-md focus:ring-sky-500 focus:border-sky-500">
-                        <option value="all">Filtra per risposta corretta</option>
-                        <option value="A">Corretta: A</option>
-                        <option value="B">Corretta: B</option>
-                        <option value="C">Corretta: C</option>
-                        <option value="D">Corretta: D</option>
-                    </select>
-                </div>
+        <div id="questions-list-section" class="questions-section">
+            <h2>Elenco Domande</h2>
+            
+            <!-- Filter Controls -->
+            <div class="filter-container">
+                <input type="search" id="search-input" placeholder="Cerca per parola chiave...">
+                <select id="filter-select">
+                    <option value="all">Filtra per risposta corretta</option>
+                    <option value="A">Corretta: A</option>
+                    <option value="B">Corretta: B</option>
+                    <option value="C">Corretta: C</option>
+                    <option value="D">Corretta: D</option>
+                </select>
+            </div>
 
-                <div id="questions-list" class="space-y-3">
-                    <!-- Le domande verranno popolate qui da JS -->
-                    <p class="text-slate-500">Nessuna domanda ancora. Aggiungine una o carica un file JSON.</p>
-                </div>
+            <div id="questions-list" class="questions-list">
+                <!-- Le domande verranno popolate qui da JS -->
+                <p class="placeholder-text">Nessuna domanda ancora. Aggiungine una o carica un file JSON.</p>
             </div>
         </div>
 

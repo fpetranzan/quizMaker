@@ -79,7 +79,7 @@ Il file JSON deve contenere una lista di domande con la seguente struttura:
 ## 🛠️ Tecnologie Utilizzate
 
 * **HTML5**
-* **Tailwind CSS**
+* **CSS**
 * **JavaScript Vanilla**
 
 ## 📌 Note

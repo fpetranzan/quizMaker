@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DOM ELEMENTS ---
     const fileInput = document.getElementById('json-file-input-editor');
-    const uploadContainer = document.getElementById('upload-container');
+    const uploadContainer = document.querySelector('.upload-area');
     const fileNamesDisplay = document.getElementById('file-names-editor');
     const downloadButton = document.getElementById('download-json-button');
     const errorDisplay = document.getElementById('editor-error');
@@ -34,28 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterSelect = document.getElementById('filter-select');
 
     // --- FUNCTIONS ---
-
-    fileInput.addEventListener('change', (event) => {
-        handleFiles(event.target.files);
-    });
-
-    uploadContainer.addEventListener('dragover', (event) => {
-        event.preventDefault(); // Necessario per permettere il drop
-        uploadContainer.classList.add('drag-over');
-    });
-
-    // L'utente lascia l'area di trascinamento
-    uploadContainer.addEventListener('dragleave', () => {
-        uploadContainer.classList.remove('drag-over');
-    });
-
-    // L'utente rilascia il file
-    uploadContainer.addEventListener('drop', (event) => {
-        event.preventDefault();
-        uploadContainer.classList.remove('drag-over');
-        handleFiles(event.dataTransfer.files);
-    });
-
+    
     /**
      * Filters and renders the list of questions based on current search and filter values.
      */
@@ -68,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 q.explanation.toLowerCase().includes(searchTerm) ||
                                 q.options.some(opt => opt.text.toLowerCase().includes(searchTerm));
             
-            const filterMatch = filterValue === 'all' || q.correct_option_id.toString() === filterValue;
+            const filterMatch = filterValue === 'all' || String(q.correct_option_id) === filterValue;
 
             return searchMatch && filterMatch;
         });
@@ -83,6 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (filteredQuestions.length === 0) {
             questionsListContainer.innerHTML = '<p class="text-slate-500">Nessuna domanda corrisponde ai criteri di ricerca.</p>';
+            downloadButton.disabled = loadedQuizData.length === 0;
+            return;
         }
 
         downloadButton.disabled = loadedQuizData.length === 0;
@@ -195,25 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderQuestionsList();
         }
     };
-    
-    /**
-     * Validates a question object structure.
-     */
-    const validateQuestion = (q, index) => {
-         if (!q.question_text || !q.options || !Array.isArray(q.options) || q.options.length === 0 || q.correct_option_id === undefined || !q.explanation) {
-            throw new Error(`La domanda ${index + 1} ha una struttura non valida.`);
-        }
-    };
-
-    // --- EVENT LISTENERS ---
-
-    toggleFormButton.addEventListener('click', () => {
-        const isHidden = formContainer.classList.toggle('hidden');
-        toggleFormButton.textContent = isHidden ? '+ Aggiungi Domanda' : '- Nascondi Form';
-        if (isHidden) {
-            resetForm(); // Reset form when hiding
-        }
-    });
 
     async function handleFiles(files) {
         if (!files.length) return;
@@ -232,26 +194,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const fileReadPromises = newFilesToProcess.map(file => {
-        return new Promise((resolve, reject) => {
-            if (file.type !== "application/json") {
-                return reject(new Error(`Il file '${file.name}' non è un JSON.`));
-            }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const parsedData = JSON.parse(e.target.result);
-                    const questionsFromFile = parsedData.questions || (Array.isArray(parsedData) ? parsedData : null);
-                    if (!questionsFromFile) throw new Error("Formato JSON non riconosciuto.");
-                    if (questionsFromFile.length > 0) validateQuestions(questionsFromFile);
-                    resolve({ name: file.name, data: questionsFromFile, rawContent: e.target.result });
-                } catch (error) {
-                    reject(new Error(`Errore nel file '${file.name}': ${error.message}`));
+            return new Promise((resolve, reject) => {
+                if (file.type !== "application/json") {
+                    return reject(new Error(`Il file '${file.name}' non è un JSON.`));
                 }
-            };
-            reader.onerror = () => reject(new Error(`Impossibile leggere il file '${file.name}'.`));
-            reader.readAsText(file);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const parsedData = JSON.parse(e.target.result);
+                        const questionsFromFile = parsedData.questions || (Array.isArray(parsedData) ? parsedData : null);
+                        if (!questionsFromFile) throw new Error("Formato JSON non riconosciuto.");
+                        if (questionsFromFile.length > 0) validateQuestions(questionsFromFile);
+                        resolve({ name: file.name, data: questionsFromFile, rawContent: e.target.result });
+                    } catch (error) {
+                        reject(new Error(`Errore nel file '${file.name}': ${error.message}`));
+                    }
+                };
+                reader.onerror = () => reject(new Error(`Impossibile leggere il file '${file.name}'.`));
+                reader.readAsText(file);
+            });
         });
-    });
 
         try {
             const results = await Promise.all(fileReadPromises);
@@ -265,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             errorDisplay.textContent = `Caricate con successo ${loadedQuizData.length} domande da ${uploadedFiles.length} file.`;
             errorDisplay.classList.add('text-green-500');
-            updateUploadedFilesList(); // Aggiorna la lista visibile dei file
+            updateUploadedFilesList();
             renderQuestionsList();
         } catch (error) {
             console.error("Errore durante il caricamento:", error);
@@ -274,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             fileInput.value = '';
         }
-    };
+    }
 
     function validateQuestions(qs) {
         qs.forEach((q, index) => {
@@ -288,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateUploadedFilesList() {
-        uploadedFilesList.innerHTML = ''; // Pulisce la lista esistente
+        uploadedFilesList.innerHTML = '';
         if (uploadedFiles.length === 0) {
             fileNamesDisplay.textContent = "Nessun file selezionato.";
             return;
@@ -304,7 +266,6 @@ document.addEventListener('DOMContentLoaded', () => {
             uploadedFilesList.appendChild(fileItem);
         });
 
-        // Aggiungi listener per i pulsanti di rimozione
         uploadedFilesList.querySelectorAll('.remove-file-button').forEach(button => {
             button.addEventListener('click', removeFile);
         });
@@ -313,10 +274,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function removeFile(event) {
         const indexToRemove = parseInt(event.target.dataset.index, 10);
         
-        // Rimuovi il file dall'array uploadedFiles
         const removedFile = uploadedFiles.splice(indexToRemove, 1)[0];
 
-        // Ricostruisci loadedQuizData dai file rimanenti
         loadedQuizData = [];
         uploadedFiles.forEach(file => {
             try {
@@ -327,11 +286,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (e) {
                 console.error(`Errore nel ri-parsing del file ${file.name} dopo la rimozione:`, e);
-                // Questo caso dovrebbe essere raro se la validazione iniziale ha funzionato
             }
         });
 
-        updateUploadedFilesList(); // Aggiorna la UI
+        updateUploadedFilesList();
+        renderQuestionsList();
 
         if (loadedQuizData.length === 0) {
             errorDisplay.textContent = "Tutti i file sono stati rimossi. Carica nuovi file JSON.";
@@ -342,6 +301,36 @@ document.addEventListener('DOMContentLoaded', () => {
             errorDisplay.classList.add('text-green-500');
         }
     }
+
+    // --- EVENT LISTENERS ---
+
+    fileInput.addEventListener('change', (event) => {
+        handleFiles(event.target.files);
+    });
+
+    uploadContainer.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        uploadContainer.classList.add('drag-over');
+    });
+
+    uploadContainer.addEventListener('dragleave', () => {
+        uploadContainer.classList.remove('drag-over');
+    });
+
+    uploadContainer.addEventListener('drop', (event) => {
+        event.preventDefault();
+        uploadContainer.classList.remove('drag-over');
+        handleFiles(event.dataTransfer.files);
+    });
+
+    toggleFormButton.addEventListener('click', () => {
+        const isHidden = formContainer.classList.toggle('hidden');
+        toggleFormButton.textContent = isHidden ? '+ Aggiungi Domanda' : '- Nascondi Form';
+        if (isHidden) {
+            resetForm(); // Reset form when hiding
+        }
+    });
+
 
     form.addEventListener('submit', (event) => {
         event.preventDefault();
@@ -404,8 +393,13 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
     });
 
-    searchInput.addEventListener('input', renderQuestionsList);
-    filterSelect.addEventListener('change', renderQuestionsList);
+    if (searchInput) {
+        searchInput.addEventListener('input', renderQuestionsList);
+    }
+    
+    if (filterSelect) {
+        filterSelect.addEventListener('change', renderQuestionsList);
+    }
 
     // --- INITIAL RENDER ---
     renderQuestionsList();

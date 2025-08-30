@@ -79,7 +79,7 @@ The JSON file must contain a list of questions in the following structure:
 ## 🛠️ Technologies Used
 
 * **HTML5**
-* **Tailwind CSS**
+* **CSS**
 * **Vanilla JavaScript**
 
 ## 📌 Notes
