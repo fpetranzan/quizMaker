@@ -15,6 +15,7 @@ const optionsContainer = document.getElementById('options-container');
 const feedbackContainer = document.getElementById('feedback-container');
 const feedbackTextElement = document.getElementById('feedback-text');
 const explanationTextElement = document.getElementById('explanation-text');
+const scorePercentageElement = document.getElementById('score-percentage');
 const scoreTextElement = document.getElementById('score-text');
 const progressBar = document.getElementById('progress-bar');
 const questionCounterElement = document.getElementById('question-counter');
@@ -470,6 +471,7 @@ function showResults() {
     quizContainer.classList.add('hidden');
     resultsContainer.classList.remove('hidden');
     homeQuizButton.classList.add('hidden');
+    scorePercentageElement.textContent = `${score / questions.length} %`;
     scoreTextElement.textContent = `${score} / ${questions.length}`;
 }
 
