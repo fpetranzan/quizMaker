@@ -49,6 +49,18 @@
                     </div>
                 </div>
 
+                <!-- Timer Settings -->
+                <div id="timer-settings" class="hidden">
+                    <div class="timer-config">
+                        <label for="question-timer-input">Timer per domanda (secondi):</label>
+                        <input type="number" id="question-timer-input" min="0" placeholder="Opzionale (es. 30)">
+                    </div>
+                    <div class="timer-config">
+                        <label for="quiz-timer-input">Timer per quiz totale (minuti):</label>
+                        <input type="number" id="quiz-timer-input" min="0" placeholder="Opzionale (es. 10)">
+                    </div>
+                </div>
+
                 <button id="start-quiz-button" class="btn btn-primary" disabled>
                     Inizia Quiz
                 </button>
@@ -60,7 +72,22 @@
             <div id="progress-bar-container" class="progress-bar">
                 <div id="progress-bar" class="progress-fill" style="width: 0%"></div>
             </div>
-            <div id="question-counter" class="text-sm">Domanda 0 di 0</div>
+
+            <div class="quiz-info-header">
+                <div id="question-counter" class="text-sm">Domanda 0 di 0</div>
+
+                <!-- Timer Displays -->
+                <div id="timers-display" class="timers-container hidden">
+                    <div id="question-timer-display" class="timer-display hidden">
+                        <span class="timer-icon">⏱️</span>
+                        <span id="question-timer-text">0s</span>
+                    </div>
+                    <div id="quiz-timer-display" class="timer-display hidden">
+                        <span class="timer-icon">⏰</span>
+                        <span id="quiz-timer-text">0:00</span>
+                    </div>
+                </div>
+            </div>
 
             <h2 id="question-text"></h2>
             <div id="options-container"></div>

@@ -23,6 +23,16 @@ const questionCountSelector = document.getElementById('question-count-selector')
 const questionCountButtons = document.getElementById('question-count-buttons');
 const uploadedFilesList = document.getElementById('uploaded-files-list');
 
+// Timer elements
+const timerSettings = document.getElementById('timer-settings');
+const questionTimerInput = document.getElementById('question-timer-input');
+const quizTimerInput = document.getElementById('quiz-timer-input');
+const timersDisplay = document.getElementById('timers-display');
+const questionTimerDisplay = document.getElementById('question-timer-display');
+const quizTimerDisplay = document.getElementById('quiz-timer-display');
+const questionTimerText = document.getElementById('question-timer-text');
+const quizTimerText = document.getElementById('quiz-timer-text');
+
 // Pulsanti di navigazione del quiz
 const backButton = document.getElementById('back-button');
 const confirmButton = document.getElementById('confirm-button');
@@ -33,12 +43,20 @@ const restartQuizButton = document.getElementById('restart-quiz-button');
 const loadNewFileButton = document.getElementById('load-new-file-button');
 
 // --- Stato del Quiz ---
-let questions = []; 
-let loadedQuizData = []; 
+let questions = [];
+let loadedQuizData = [];
 let currentQuestionIndex = 0;
 let score = 0;
 let selectedOption = null; // Memorizza l'elemento del DOM del pulsante dell'opzione selezionata
 let uploadedFiles = []; // Array per tenere traccia dei nomi dei file caricati
+
+// Timer state
+let questionTimerSeconds = 0; // 0 = disabled
+let quizTimerMinutes = 0; // 0 = disabled
+let questionTimerInterval = null;
+let quizTimerInterval = null;
+let currentQuestionTimeLeft = 0;
+let totalQuizTimeLeft = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadQuestionsFromLocalStorage();
@@ -127,6 +145,7 @@ async function handleFiles(files) {
         updateUploadedFilesList(); // Aggiorna la lista visibile dei file
         updateQuestionCountOptions();
         questionCountSelector.classList.remove('hidden');
+        timerSettings.classList.remove('hidden');
         startQuizButton.disabled = false;
     } catch (error) {
         console.error("Errore durante il caricamento:", error);
@@ -184,6 +203,7 @@ async function loadQuestionsFromLocalStorage() {
                 updateUploadedFilesList();
                 updateQuestionCountOptions();
                 questionCountSelector.classList.remove('hidden');
+                timerSettings.classList.remove('hidden');
                 startQuizButton.disabled = false;
             } else {
                 resetUploadUI();
@@ -257,6 +277,7 @@ function removeFile(event) {
         uploadError.classList.add('text-green-500');
         updateQuestionCountOptions();
         questionCountSelector.classList.remove('hidden');
+        timerSettings.classList.remove('hidden');
         startQuizButton.disabled = false;
     }
 }
@@ -332,13 +353,23 @@ function setupAndStartQuiz() {
 
     const selectedButton = questionCountButtons.querySelector('.selected');
     const desiredCountValue = selectedButton ? selectedButton.dataset.value : 'all';
-    
-    const desiredCount = desiredCountValue === 'all' 
-        ? loadedQuizData.length 
+
+    const desiredCount = desiredCountValue === 'all'
+        ? loadedQuizData.length
         : parseInt(desiredCountValue, 10);
-    
+
     const shuffledQuestions = shuffleArray([...loadedQuizData]);
     questions = shuffledQuestions.slice(0, Math.min(desiredCount, loadedQuizData.length));
+
+    // Read timer settings
+    questionTimerSeconds = parseInt(questionTimerInput.value) || 0;
+    quizTimerMinutes = parseInt(quizTimerInput.value) || 0;
+
+    // Initialize total quiz timer
+    if (quizTimerMinutes > 0) {
+        totalQuizTimeLeft = quizTimerMinutes * 60;
+        startQuizTimer();
+    }
 
     currentQuestionIndex = 0;
     score = 0;
@@ -360,11 +391,16 @@ function displayQuestion() {
     const currentQuestion = questions[currentQuestionIndex];
     questionTextElement.innerHTML = currentQuestion.question_text;
     optionsContainer.innerHTML = '';
-    
+
     // Aggiorna la barra di progresso e il contatore
     const progressPercentage = ((currentQuestionIndex) / questions.length) * 100;
     progressBar.style.width = `${progressPercentage}%`;
     questionCounterElement.textContent = `Domanda ${currentQuestionIndex + 1} di ${questions.length}`;
+
+    // Start question timer if enabled
+    if (questionTimerSeconds > 0) {
+        startQuestionTimer();
+    }
 
     const shuffledOptions = shuffleArray([...currentQuestion.options]);
     shuffledOptions.forEach(option => {
@@ -405,6 +441,9 @@ function handleOptionSelect(event) {
 confirmButton.addEventListener('click', () => {
     if (!selectedOption) return;
 
+    // Stop question timer
+    stopQuestionTimer();
+
     const selectedOptionId = selectedOption.dataset.optionId.toString();
     const currentQuestion = questions[currentQuestionIndex];
     const correctOptionId = currentQuestion.correct_option_id.toString();
@@ -434,7 +473,7 @@ confirmButton.addEventListener('click', () => {
             correctButton.classList.add('correct');
         }
     }
-    
+
     // Mostra spiegazione e feedback
     explanationTextElement.innerHTML = currentQuestion.explanation;
     feedbackContainer.classList.remove('hidden');
@@ -468,6 +507,10 @@ backButton.addEventListener('click', () => {
 });
 
 function showResults() {
+    // Stop all timers
+    stopQuestionTimer();
+    stopQuizTimer();
+
     quizContainer.classList.add('hidden');
     resultsContainer.classList.remove('hidden');
     homeQuizButton.classList.add('hidden');
@@ -493,6 +536,7 @@ function resetUploadUI() {
     uploadedFiles = []; // Resetta l'array dei file caricati
     startQuizButton.disabled = true;
     questionCountSelector.classList.add('hidden');
+    timerSettings.classList.add('hidden');
     uploadError.textContent = '';
 }
 
@@ -507,3 +551,128 @@ loadNewFileButton.addEventListener('click', () => {
     localStorage.removeItem('uploadedQuizFiles'); // Pulisci il localStorage quando si caricano nuovi file
     resetUploadUI();
 });
+
+// ==================== TIMER FUNCTIONS ====================
+
+function startQuestionTimer() {
+    stopQuestionTimer(); // Clear any existing timer
+    currentQuestionTimeLeft = questionTimerSeconds;
+
+    // Show timer display
+    questionTimerDisplay.classList.remove('hidden');
+    timersDisplay.classList.remove('hidden');
+    updateQuestionTimerDisplay();
+
+    questionTimerInterval = setInterval(() => {
+        currentQuestionTimeLeft--;
+        updateQuestionTimerDisplay();
+
+        if (currentQuestionTimeLeft <= 0) {
+            stopQuestionTimer();
+            handleQuestionTimeout();
+        }
+    }, 1000);
+}
+
+function stopQuestionTimer() {
+    if (questionTimerInterval) {
+        clearInterval(questionTimerInterval);
+        questionTimerInterval = null;
+    }
+}
+
+function updateQuestionTimerDisplay() {
+    questionTimerText.textContent = `${currentQuestionTimeLeft}s`;
+
+    // Add warning class when time is running out
+    if (currentQuestionTimeLeft <= 10 && currentQuestionTimeLeft > 0) {
+        questionTimerDisplay.classList.add('timer-warning');
+    } else if (currentQuestionTimeLeft === 0) {
+        questionTimerDisplay.classList.add('timer-expired');
+        questionTimerDisplay.classList.remove('timer-warning');
+    } else {
+        questionTimerDisplay.classList.remove('timer-warning', 'timer-expired');
+    }
+}
+
+function handleQuestionTimeout() {
+    // Auto-select first option or mark as incorrect
+    const currentQuestion = questions[currentQuestionIndex];
+    currentQuestion.wasAnsweredCorrectly = false;
+
+    // Disable all option buttons
+    Array.from(optionsContainer.children).forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('disabled-option');
+        btn.removeEventListener('click', handleOptionSelect);
+    });
+
+    // Highlight correct answer
+    const correctOptionId = currentQuestion.correct_option_id.toString();
+    const correctButton = optionsContainer.querySelector(`[data-option-id="${correctOptionId}"]`);
+    if (correctButton) {
+        correctButton.classList.add('correct');
+    }
+
+    // Show timeout feedback
+    feedbackTextElement.textContent = "Tempo Scaduto!";
+    feedbackTextElement.className = 'text-lg font-medium mb-2 text-orange-600';
+    explanationTextElement.innerHTML = currentQuestion.explanation;
+    feedbackContainer.classList.remove('hidden');
+    feedbackContainer.className = 'p-4 rounded-lg mb-6 bg-slate-50 border border-slate-200 text-slate-700';
+
+    // Update navigation buttons
+    confirmButton.classList.add('hidden');
+    backButton.classList.add('hidden');
+    nextQuestionButton.classList.remove('hidden');
+    nextQuestionButton.textContent = (currentQuestionIndex < questions.length - 1) ? "Domanda Successiva" : "Mostra Risultati";
+}
+
+function startQuizTimer() {
+    stopQuizTimer(); // Clear any existing timer
+
+    // Show timer display
+    quizTimerDisplay.classList.remove('hidden');
+    timersDisplay.classList.remove('hidden');
+    updateQuizTimerDisplay();
+
+    quizTimerInterval = setInterval(() => {
+        totalQuizTimeLeft--;
+        updateQuizTimerDisplay();
+
+        if (totalQuizTimeLeft <= 0) {
+            stopQuizTimer();
+            handleQuizTimeout();
+        }
+    }, 1000);
+}
+
+function stopQuizTimer() {
+    if (quizTimerInterval) {
+        clearInterval(quizTimerInterval);
+        quizTimerInterval = null;
+    }
+}
+
+function updateQuizTimerDisplay() {
+    const minutes = Math.floor(totalQuizTimeLeft / 60);
+    const seconds = totalQuizTimeLeft % 60;
+    quizTimerText.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    // Add warning class when time is running out (last 2 minutes)
+    if (totalQuizTimeLeft <= 120 && totalQuizTimeLeft > 0) {
+        quizTimerDisplay.classList.add('timer-warning');
+    } else if (totalQuizTimeLeft === 0) {
+        quizTimerDisplay.classList.add('timer-expired');
+        quizTimerDisplay.classList.remove('timer-warning');
+    } else {
+        quizTimerDisplay.classList.remove('timer-warning', 'timer-expired');
+    }
+}
+
+function handleQuizTimeout() {
+    // End the quiz immediately
+    feedbackTextElement.textContent = "Tempo del Quiz Scaduto!";
+    feedbackTextElement.className = 'text-lg font-medium mb-2 text-orange-600';
+    showResults();
+}
