@@ -9,9 +9,10 @@ L'applicazione è divisa in due sezioni principali:
 
 **1\. Player del Quiz (index.html)**
 
-* **Caricamento Multiplo**: Carica uno o più file JSON per unire le domande in un unico quiz.  
-* **Selezione Domande**: Scegli quante domande includere nel test (5, 10, 20, o tutte).  
-* **Randomizzazione**: Sia le domande che l'ordine delle risposte vengono mescolati a ogni partita per un'esperienza sempre nuova.  
+* **Caricamento Multiplo**: Carica uno o più file JSON per unire le domande in un unico quiz.
+* **Selezione Domande**: Scegli quante domande includere nel test (5, 10, 20, o tutte).
+* **Timer Opzionali**: Imposta un limite di tempo per domanda (in secondi) o per l'intero quiz (in minuti) - completamente opzionali.
+* **Randomizzazione**: Sia le domande che l'ordine delle risposte vengono mescolati a ogni partita per un'esperienza sempre nuova.
 * **Feedback Immediato**: Ricevi un riscontro istantaneo dopo ogni risposta, con una spiegazione dettagliata.
 
 **2\. Editor di Quiz (editor.html)**
@@ -63,9 +64,10 @@ Il file JSON deve contenere una lista di domande con la seguente struttura:
 
 **Per Svolgere un Quiz:**
 
-1. Nella pagina principale, clicca su Scegli file JSON per caricare uno o più file.  
-2. Seleziona il numero di domande desiderato.  
-3. Clicca su Inizia Quiz per cominciare.
+1. Nella pagina principale, clicca su Scegli file JSON per caricare uno o più file.
+2. Seleziona il numero di domande desiderato.
+3. (Opzionale) Imposta i timer: inserisci i secondi per domanda e/o i minuti per l'intero quiz.
+4. Clicca su Inizia Quiz per cominciare.
 
 **Per Creare o Modificare un Quiz:**
 

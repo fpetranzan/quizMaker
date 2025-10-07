@@ -9,9 +9,10 @@ The application is divided into two main sections:
 
 **1\. Quiz Player (index.html)**
 
-* **Multiple File Upload**: Load one or more JSON files to merge questions into a single quiz.  
-* **Question Selection**: Choose how many questions to include in the test (5, 10, 20, or all).  
-* **Randomization**: Both the questions and the order of the answers are shuffled in each session for a new experience every time.  
+* **Multiple File Upload**: Load one or more JSON files to merge questions into a single quiz.
+* **Question Selection**: Choose how many questions to include in the test (5, 10, 20, or all).
+* **Optional Timers**: Set a time limit per question (in seconds) or for the entire quiz (in minutes) - completely optional.
+* **Randomization**: Both the questions and the order of the answers are shuffled in each session for a new experience every time.
 * **Instant Feedback**: Receive immediate feedback after each answer, complete with a detailed explanation.
 
 **2\. Quiz Editor (editor.html)**
@@ -63,9 +64,10 @@ The JSON file must contain a list of questions in the following structure:
 
 **To Take a Quiz:**
 
-1. On the main page, click Scegli file JSON (Choose JSON files) to upload one or more files.  
-2. Select the desired number of questions.  
-3. Click Inizia Quiz (Start Quiz) to begin.
+1. On the main page, click Scegli file JSON (Choose JSON files) to upload one or more files.
+2. Select the desired number of questions.
+3. (Optional) Set timer limits: enter seconds per question and/or minutes for the entire quiz.
+4. Click Inizia Quiz (Start Quiz) to begin.
 
 **To Create or Edit a Quiz:**
 
