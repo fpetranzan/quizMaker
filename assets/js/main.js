@@ -514,7 +514,7 @@ function showResults() {
     quizContainer.classList.add('hidden');
     resultsContainer.classList.remove('hidden');
     homeQuizButton.classList.add('hidden');
-    scorePercentageElement.textContent = `${score / questions.length} %`;
+    scorePercentageElement.textContent = `${((score / questions.length) * 100).toFixed(2)} %`;
     scoreTextElement.textContent = `${score} / ${questions.length}`;
 }
 
