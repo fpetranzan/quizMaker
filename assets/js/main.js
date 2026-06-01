@@ -21,6 +21,7 @@ const progressBar = document.getElementById('progress-bar');
 const questionCounterElement = document.getElementById('question-counter');
 const questionCountSelector = document.getElementById('question-count-selector');
 const questionCountButtons = document.getElementById('question-count-buttons');
+const customQuestionCount = document.getElementById('custom-question-count');
 const uploadedFilesList = document.getElementById('uploaded-files-list');
 
 // Timer elements
@@ -284,7 +285,7 @@ function removeFile(event) {
 
 function validateQuestions(qs) {
     qs.forEach((q, index) => {
-        if (!q.question_text || !q.options || !Array.isArray(q.options) || !q.options.length || q.correct_option_id === undefined || !q.explanation) {
+        if (!q.question_text || !q.options || !Array.isArray(q.options) || !q.options.length || q.correct_option_id === undefined || q.explanation == null) {
             throw new Error(`La domanda ${index + 1} ha una struttura non valida.`);
         }
         q.options.forEach(opt => {
@@ -295,6 +296,7 @@ function validateQuestions(qs) {
 
 function updateQuestionCountOptions() {
     questionCountButtons.innerHTML = '';
+    customQuestionCount.value = '';
     const totalQuestions = loadedQuizData.length;
     const options = [5, 10, 15, 20];
 
@@ -329,6 +331,17 @@ questionCountButtons.addEventListener('click', (event) => {
     
     // Aggiunge la selezione al pulsante cliccato
     target.classList.add('selected');
+
+    // Svuota il campo personalizzato
+    customQuestionCount.value = '';
+});
+
+customQuestionCount.addEventListener('input', () => {
+    if (customQuestionCount.value) {
+        questionCountButtons.querySelectorAll('.count-button').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+    }
 });
 
 function shuffleArray(array) {
@@ -352,11 +365,22 @@ function setupAndStartQuiz() {
     heroBanner.classList.add('hidden');
 
     const selectedButton = questionCountButtons.querySelector('.selected');
-    const desiredCountValue = selectedButton ? selectedButton.dataset.value : 'all';
+    const customValue = customQuestionCount.value.trim();
+    let desiredCount;
 
-    const desiredCount = desiredCountValue === 'all'
-        ? loadedQuizData.length
-        : parseInt(desiredCountValue, 10);
+    if (customValue) {
+        const parsed = parseInt(customValue, 10);
+        if (isNaN(parsed) || parsed < 1) {
+            desiredCount = loadedQuizData.length;
+        } else {
+            desiredCount = Math.min(parsed, loadedQuizData.length);
+        }
+    } else {
+        const desiredCountValue = selectedButton ? selectedButton.dataset.value : 'all';
+        desiredCount = desiredCountValue === 'all'
+            ? loadedQuizData.length
+            : parseInt(desiredCountValue, 10);
+    }
 
     const shuffledQuestions = shuffleArray([...loadedQuizData]);
     questions = shuffledQuestions.slice(0, Math.min(desiredCount, loadedQuizData.length));

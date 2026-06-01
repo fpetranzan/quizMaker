@@ -105,9 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     `).join('')}
                 </div>
+                ${question.explanation ? `
                 <div class="mt-3 p-3 bg-sky-50 border border-sky-200 rounded-md text-sm">
                     <strong>Spiegazione:</strong> ${question.explanation}
-                </div>
+                </div>` : ''}
             `;
             
             questionElement.appendChild(header);
@@ -240,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validateQuestions(qs) {
         qs.forEach((q, index) => {
-            if (!q.question_text || !q.options || !Array.isArray(q.options) || !q.options.length || q.correct_option_id === undefined || !q.explanation) {
+            if (!q.question_text || !q.options || !Array.isArray(q.options) || !q.options.length || q.correct_option_id === undefined || q.explanation == null) {
                 throw new Error(`La domanda ${index + 1} ha una struttura non valida.`);
             }
             q.options.forEach(opt => {
