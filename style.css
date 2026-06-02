@@ -795,6 +795,13 @@ input:focus, textarea:focus, select:focus {
     font-size: 0.9rem;
 }
 
+.uploaded-file-item span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .remove-file-button {
     background: none;
     border: none;
