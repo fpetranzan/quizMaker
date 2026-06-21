@@ -59,6 +59,80 @@ let quizTimerInterval = null;
 let currentQuestionTimeLeft = 0;
 let totalQuizTimeLeft = 0;
 
+// --- Variabili per il Ripasso Errori ---
+const WRONG_QUESTIONS_KEY = 'wrongQuestions';
+const IMPORTANCE_INITIAL = 1.0;
+const IMPORTANCE_WRONG_INC = 0.5;
+const IMPORTANCE_CORRECT_DEC = 0.33;
+const IMPORTANCE_MAX = 3.0;
+
+function getQuestionKey(q) {
+    if (q.id !== undefined && q.id !== null && q.id !== '') {
+        return 'id:' + q.id;
+    }
+    return 'text:' + q.question_text;
+}
+
+function questionMatches(q1, q2) {
+    return getQuestionKey(q1) === getQuestionKey(q2);
+}
+
+function loadWrongQuestions() {
+    try {
+        const data = localStorage.getItem(WRONG_QUESTIONS_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch (e) {
+        console.error("Errore nel caricamento delle domande errate:", e);
+        return [];
+    }
+}
+
+function saveWrongQuestions(list) {
+    try {
+        localStorage.setItem(WRONG_QUESTIONS_KEY, JSON.stringify(list));
+    } catch (e) {
+        console.error("Errore nel salvataggio delle domande errate:", e);
+    }
+}
+
+function addWrongQuestion(question) {
+    let wrongList = loadWrongQuestions();
+    const existing = wrongList.find(wq => questionMatches(wq.question, question));
+    if (existing) {
+        existing.importance = Math.min(existing.importance + IMPORTANCE_WRONG_INC, IMPORTANCE_MAX);
+        existing.lastUpdatedAt = Date.now();
+    } else {
+        wrongList.push({
+            question: JSON.parse(JSON.stringify(question)),
+            importance: IMPORTANCE_INITIAL,
+            createdAt: Date.now(),
+            lastUpdatedAt: Date.now()
+        });
+    }
+    saveWrongQuestions(wrongList);
+}
+
+function removeWrongQuestion(question) {
+    let wrongList = loadWrongQuestions();
+    const existing = wrongList.find(wq => questionMatches(wq.question, question));
+    if (existing) {
+        existing.importance -= IMPORTANCE_CORRECT_DEC;
+        existing.lastUpdatedAt = Date.now();
+        if (existing.importance <= 0) {
+            wrongList = wrongList.filter(wq => !questionMatches(wq.question, question));
+        }
+        saveWrongQuestions(wrongList);
+    }
+}
+
+function getWrongQuestionsForCurrentFiles() {
+    const wrongList = loadWrongQuestions();
+    return wrongList.filter(wq => {
+        if (wq.importance <= 0) return false;
+        return loadedQuizData.some(q => questionMatches(q, wq.question));
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadQuestionsFromLocalStorage();
 });
@@ -266,6 +340,19 @@ function removeFile(event) {
         }
     });
 
+    // Rimuovi dal ripasso errori le domande che appartenevano al file rimosso
+    try {
+        const removedParsed = JSON.parse(removedFile.content);
+        const removedQuestions = removedParsed.questions || (Array.isArray(removedParsed) ? removedParsed : []);
+        let wrongList = loadWrongQuestions();
+        wrongList = wrongList.filter(wq =>
+            !removedQuestions.some(rq => questionMatches(rq, wq.question))
+        );
+        saveWrongQuestions(wrongList);
+    } catch (e) {
+        console.warn("Impossibile ripulire il ripasso errori per il file rimosso:", e);
+    }
+
     saveQuestionsToLocalStorage(); // Salva lo stato aggiornato
     updateUploadedFilesList(); // Aggiorna la UI
 
@@ -382,8 +469,37 @@ function setupAndStartQuiz() {
             : parseInt(desiredCountValue, 10);
     }
 
-    const shuffledQuestions = shuffleArray([...loadedQuizData]);
-    questions = shuffledQuestions.slice(0, Math.min(desiredCount, loadedQuizData.length));
+    // --- Logica Ripasso Errori ---
+    const relevantWrongQuestions = getWrongQuestionsForCurrentFiles();
+
+    // Calcola quante domande sbagliate includere (max 10% del totale, almeno 1)
+    const maxWrongCount = Math.min(
+        relevantWrongQuestions.length,
+        Math.max(1, Math.floor(desiredCount * 0.1))
+    );
+
+    let selectedWrong = [];
+    if (maxWrongCount > 0) {
+        // Ordina per lastUpdatedAt ascendente (più vecchie prima → spaziatura)
+        const sorted = [...relevantWrongQuestions].sort((a, b) => a.lastUpdatedAt - b.lastUpdatedAt);
+        const toInclude = sorted.slice(0, maxWrongCount);
+
+        selectedWrong = toInclude.map(wq =>
+            loadedQuizData.find(q => questionMatches(q, wq.question))
+        ).filter(Boolean);
+    }
+
+    // Rimuovi le domande già selezionate come errori dal pool completo
+    const remainingPool = loadedQuizData.filter(q =>
+        !selectedWrong.some(wq => questionMatches(wq, q))
+    );
+
+    const remainingCount = Math.min(desiredCount - selectedWrong.length, remainingPool.length);
+    const shuffledRemaining = shuffleArray([...remainingPool]);
+    const selectedNew = shuffledRemaining.slice(0, remainingCount);
+
+    // Combina e mescola tutto
+    questions = shuffleArray([...selectedWrong, ...selectedNew]);
 
     // Read timer settings
     questionTimerSeconds = parseInt(questionTimerInput.value) || 0;
@@ -486,6 +602,8 @@ confirmButton.addEventListener('click', () => {
         feedbackTextElement.textContent = "Risposta Corretta!";
         feedbackTextElement.className = 'text-lg font-medium mb-2 text-green-600';
         selectedOption.classList.add('correct');
+        // Se era in ripasso errori, cala l'importanza
+        removeWrongQuestion(currentQuestion);
     } else {
         currentQuestion.wasAnsweredCorrectly = false;
         feedbackTextElement.textContent = "Risposta Sbagliata!";
@@ -496,6 +614,8 @@ confirmButton.addEventListener('click', () => {
         if (correctButton) {
             correctButton.classList.add('correct');
         }
+        // Aggiungi ai ripasso errori
+        addWrongQuestion(currentQuestion);
     }
 
     // Mostra spiegazione e feedback
@@ -573,6 +693,7 @@ loadNewFileButton.addEventListener('click', () => {
     currentQuestionIndex = 0;
     score = 0;
     localStorage.removeItem('uploadedQuizFiles'); // Pulisci il localStorage quando si caricano nuovi file
+    localStorage.removeItem(WRONG_QUESTIONS_KEY); // Pulisce anche il ripasso errori (cambio contesto completo)
     resetUploadUI();
 });
 
@@ -623,6 +744,7 @@ function handleQuestionTimeout() {
     // Auto-select first option or mark as incorrect
     const currentQuestion = questions[currentQuestionIndex];
     currentQuestion.wasAnsweredCorrectly = false;
+    addWrongQuestion(currentQuestion);
 
     // Disable all option buttons
     Array.from(optionsContainer.children).forEach(btn => {
